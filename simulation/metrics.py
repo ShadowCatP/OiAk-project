@@ -1,23 +1,14 @@
-from typing import List
+# metrics.py
 
-
-def compute_mae(errors: List[int]) -> float:
-    """Compute Mean Absolute Error (MAE)."""
-    if not errors:
-        return 0.0
-    return sum(errors) / len(errors)
-
-
-def compute_mred(errors: List[int], exact_values: List[int]) -> float:
-    """Compute Mean Relative Error Distance (MRED)."""
-    if not errors or not exact_values:
-        return 0.0
-
-    total = 0.0
-    count = 0
-    for e, x in zip(errors, exact_values):
-        if x != 0:
-            total += e / x
-            count += 1
-
-    return (total / count) if count > 0 else 0.0
+def compute_error_metrics(true_val, approx_val):
+    """
+    Return the absolute error and a single-sample relative error (RED).
+    RED = |true - approx| / |true| if true != 0, else special cases.
+    """
+    error = abs(true_val - approx_val)
+    if true_val != 0:
+        red = error / abs(true_val)
+    else:
+        # If the true result is zero
+        red = 0 if approx_val == 0 else 1
+    return error, red
