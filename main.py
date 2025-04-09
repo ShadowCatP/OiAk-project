@@ -144,9 +144,9 @@ def populate_synthesis_data(results, W):
             results[adder_name][K]["gates"]  = gcount
             results[adder_name][K]["energy"] = eng
 
-def plot_mred_wce(results):
+def plot_error_combined(results):
     """
-    The usual MRED vs K and WCE vs K combined for all adders.
+    Single figure for MRED vs K (all adders) plus single figure for WCE vs K (all adders).
     """
     adder_names = list(results.keys())
 
@@ -173,6 +173,37 @@ def plot_mred_wce(results):
     plt.title("All Adders: WCE vs. K")
     plt.legend()
     plt.grid(True)
+
+    plt.show()
+
+def plot_error_separate(results):
+    """
+    Create separate plots for each adder variant.
+    For each adder, we produce 2 plots:
+      1) MRED vs. K
+      2) WCE vs. K
+    """
+    for adder_name in results.keys():
+        # Gather data
+        K_list = sorted(results[adder_name].keys())
+        MRED_list = [results[adder_name][k]["mred"] for k in K_list]
+        WCE_list  = [results[adder_name][k]["wce"]  for k in K_list]
+
+        # Plot MRED
+        plt.figure()
+        plt.plot(K_list, MRED_list, marker='o')
+        plt.xlabel("K (Approx bits)")
+        plt.ylabel("Average MRED")
+        plt.title(f"{adder_name}: MRED vs. K")
+        plt.grid(True)
+
+        # Plot WCE
+        plt.figure()
+        plt.plot(K_list, WCE_list, marker='s')
+        plt.xlabel("K (Approx bits)")
+        plt.ylabel("Worst Case Error")
+        plt.title(f"{adder_name}: WCE vs. K")
+        plt.grid(True)
 
     plt.show()
 
@@ -210,57 +241,6 @@ def plot_gate_energy(results):
 
     plt.show()
 
-
-def plot_savings(results):
-    """
-    Optionally, produce "savings" charts relative to the EXACT version (K=0).
-    For each adder, we compute savings = (1 - approximate/exact).
-    We'll combine all adders on one plot for gates, another for energy.
-    """
-    adder_names = list(results.keys())
-
-    # We'll build a dictionary: savings[adder_name][K] = (gate_saving, energy_saving)
-    # But we only plot K>0 because K=0 is the baseline with 0% saving
-    savings_dict = {}
-    for name in adder_names:
-        baseline_gates  = results[name][0]["gates"]  # exact version
-        baseline_energy = results[name][0]["energy"]
-        local = {}
-        for K in sorted(results[name].keys()):
-            g = results[name][K]["gates"]
-            e = results[name][K]["energy"]
-            gate_saving   = 1.0 - (g / baseline_gates)
-            energy_saving = 1.0 - (e / baseline_energy)
-            local[K] = (gate_saving, energy_saving)
-        savings_dict[name] = local
-
-    # 1) Gate savings
-    plt.figure()
-    for name in adder_names:
-        K_list = sorted(k for k in savings_dict[name].keys())
-        # convert from fraction to percentage if you like
-        gate_save_list = [savings_dict[name][k][0]*100.0 for k in K_list]
-        plt.plot(K_list, gate_save_list, marker='o', label=name)
-    plt.xlabel("K (Approx bits)")
-    plt.ylabel("Gate Savings (%) vs. Exact (K=0)")
-    plt.title("Gate Savings vs. K (All Adders)")
-    plt.legend()
-    plt.grid(True)
-
-    # 2) Energy savings
-    plt.figure()
-    for name in adder_names:
-        K_list = sorted(k for k in savings_dict[name].keys())
-        eng_save_list = [savings_dict[name][k][1]*100.0 for k in K_list]
-        plt.plot(K_list, eng_save_list, marker='s', label=name)
-    plt.xlabel("K (Approx bits)")
-    plt.ylabel("Energy Savings (%) vs. Exact (K=0)")
-    plt.title("Energy Savings vs. K (All Adders)")
-    plt.legend()
-    plt.grid(True)
-
-    plt.show()
-
 if __name__ == "__main__":
     W = 16
     num_tests = 2000
@@ -273,10 +253,8 @@ if __name__ == "__main__":
     populate_synthesis_data(results, W)
 
     # Step C: Plot the error metrics
-    plot_mred_wce(results)
+    plot_error_combined(results)
+    plot_error_separate(results)
 
     # Step D: Plot the gate count & energy
     plot_gate_energy(results)
-
-    # Step E: Plot the "savings" vs. the EXACT design (K=0)
-    plot_savings(results)
